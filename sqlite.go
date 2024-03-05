@@ -39,26 +39,28 @@ type SchemaField struct {
 	CharacterMaxLength sql.NullInt64 `json:"character_max_length,omitempty"`
 }
 
-func (s SchemaField) AvroDefault() any {
-	if s.Type == sqliteNull {
-		return nil
+func (s SchemaField) AvroDefault() interface{} {
+	if s.Nullable {
+		return avro.NoDefault
 	}
 
 	switch s.Type {
+	case sqliteNull:
+		return nil
 	case sqliteInteger:
-		if s.Default == nil {
+		if _, ok := s.Default.(int64); !ok {
 			return sqliteIntegerDefault
 		}
 	case sqliteReal:
-		if s.Default == nil {
+		if _, ok := s.Default.(float64); !ok {
 			return sqliteRealDefault
 		}
 	case sqliteText:
-		if s.Default == nil {
+		if _, ok := s.Default.(string); !ok {
 			return sqliteTextDefault
 		}
 	case sqliteBlob:
-		if s.Default == nil {
+		if _, ok := s.Default.([]byte); !ok {
 			return sqliteBlobDefault
 		}
 	}
@@ -74,6 +76,7 @@ func (s *SqliteSchema) ToAvro() (avro.Schema, error) {
 			return nil, fmt.Errorf("failed to convert sqlite type to avro schema: [%w]", err)
 		}
 
+		fmt.Println("Creating AVRO field: ", field.Name, s, field.AvroDefault())
 		avroField, err := avro.NewField(field.Name, s, field.AvroDefault())
 		if err != nil {
 			return nil, fmt.Errorf("failed to create avro field: [%w]", err)
