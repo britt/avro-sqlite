@@ -2,6 +2,7 @@ package avrosqlite
 
 import (
 	"errors"
+	"io"
 
 	"github.com/hamba/avro"
 )
@@ -40,4 +41,28 @@ func sqliteToAvroSchema(t sqliteType) (avro.Schema, error) {
 	default:
 		return nil, errors.New("unknown sqlite type")
 	}
+}
+
+// ReadAvro reads avro records from an io.Reader into a slice of T
+func ReadAvro[T any](schema avro.Schema, r io.Reader) ([]T, error) {
+	out := []T{}
+
+	decoder, err := avro.NewDecoder(schema.String(), r)
+	if err != nil {
+		return out, err
+	}
+
+	var st T
+	for err == nil {
+		err = decoder.Decode(&st)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return out, err
+		}
+		out = append(out, st)
+	}
+
+	return out, nil
 }
