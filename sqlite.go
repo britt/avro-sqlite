@@ -2,20 +2,26 @@ package avrosqlite
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/hamba/avro"
 )
 
 type SQLiteType string
 
 const (
-	SQLiteNull    SQLiteType = "null"
-	SQLiteInteger SQLiteType = "integer"
-	SQLiteReal    SQLiteType = "real"
-	SQLiteText    SQLiteType = "text"
-	SQLiteBlob    SQLiteType = "blob"
+	SQLiteNull           SQLiteType = "null"
+	SQLiteInteger        SQLiteType = "integer"
+	SQLiteReal           SQLiteType = "real"
+	SQLiteText           SQLiteType = "text"
+	SQLiteBlob           SQLiteType = "blob"
+	SQLiteIntegerDefault            = 0
+	SQLiteRealDefault               = 0.0
+	SQLiteTextDefault               = ""
 )
+
+var SQLiteBlobDefault = []byte{}
 
 type SqliteSchema struct {
 	Table  string        `json:"table"`
@@ -26,15 +32,58 @@ type SchemaField struct {
 	Name               string        `json:"name"`
 	Type               SQLiteType    `json:"type"`
 	Nullable           bool          `json:"nullable"`
-	Default            string        `json:"default,omitempty"`
+	Default            interface{}   `json:"default,omitempty"`
 	NumericPrecision   sql.NullInt64 `json:"numeric_precision,omitempty"`
 	NumericScale       sql.NullInt64 `json:"numeric_scale,omitempty"`
 	CharacterMaxLength sql.NullInt64 `json:"character_max_length,omitempty"`
 }
 
+func (s SchemaField) AvroDefault() interface{} {
+	if s.Nullable || s.Type == SQLiteNull {
+		return nil
+	}
+
+	switch s.Type {
+	case SQLiteInteger:
+		if s.Default == nil {
+			return SQLiteIntegerDefault
+		}
+	case SQLiteReal:
+		if s.Default == nil {
+			return SQLiteRealDefault
+		}
+	case SQLiteText:
+		if s.Default == nil {
+			return SQLiteTextDefault
+		}
+	case SQLiteBlob:
+		if s.Default == nil {
+			return SQLiteBlobDefault
+		}
+	}
+	return s.Default
+}
+
 // ToAvro returns the avro schema for the sqlite schema
-func (s *SqliteSchema) ToAvro() (*AvroSchema, error) {
-	return nil, errors.New("not implemented")
+func (s *SqliteSchema) ToAvro() (avro.Schema, error) {
+	fields := []*avro.Field{}
+	for _, field := range s.Fields {
+		s, err := SqliteToAvroSchema(field.Type)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert sqlite type to avro schema: [%w]", err)
+		}
+
+		avroField, err := avro.NewField(field.Name, s, field.AvroDefault())
+		if err != nil {
+			return nil, fmt.Errorf("failed to create avro field: [%w]", err)
+		}
+		fields = append(fields, avroField)
+	}
+	record, err := avro.NewRecordSchema(s.Table, "com.github.britt.avrosqlite", fields)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create avro record schema: [%w]", err)
+	}
+	return record, nil
 }
 
 // ListTables returns a list of tables in the sqlite database

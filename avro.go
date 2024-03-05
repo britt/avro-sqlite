@@ -1,35 +1,60 @@
 package avrosqlite
 
-import "errors"
+import (
+	"errors"
 
-type AvroType string
-
-const (
-	AvroNull   AvroType = "null"
-	AvroLong   AvroType = "long"
-	AvroDouble AvroType = "double"
-	AvroString AvroType = "string"
-	AvroBytes  AvroType = "bytes"
+	"github.com/hamba/avro"
 )
 
-type AvroSchema struct{}
+var (
+	NullSchema   = avro.MustParse(`{"type": "null"}`)
+	LongSchema   = avro.MustParse(`{"type": "long"}`)
+	DoubleSchema = avro.MustParse(`{"type": "double"}`)
+	StringSchema = avro.MustParse(`{"type": "string"}`)
+	BytesSchema  = avro.MustParse(`{"type": "bytes"}`)
+)
 
-// ToSqlite returns the sqlite schema for the avro schema
-func (s *AvroSchema) ToSqlite() (*SqliteSchema, error) {
+// AvroToSqliteSchema returns the sqlite schema for the avro schema
+func AvroToSqliteSchema(schema avro.Schema) (*SqliteSchema, error) {
 	return nil, errors.New("not implemented")
 }
 
-// ToBytes returns the serialized avro schema
-func (s *AvroSchema) ToBytes() ([]byte, error) {
-	return nil, errors.New("not implemented")
+// SqliteToAvroType converts a sqlite type to an avro type.
+// Sqlite typoes are convered into the largest avro type that can hold the sqlite type.
+// This means that representations are not as dense as they could be, but it is a simple
+// way to ensure compatibility.
+// https://www.sqlite.org/datatype3.html
+// https://avro.apache.org/docs/1.8.2/spec.html#schema_primitive
+func SqliteToAvroType(sqliteType SQLiteType) (avro.Type, error) {
+	switch sqliteType {
+	case SQLiteNull:
+		return avro.Null, nil
+	case SQLiteInteger:
+		return avro.Long, nil
+	case SQLiteReal:
+		return avro.Double, nil
+	case SQLiteText:
+		return avro.String, nil
+	case SQLiteBlob:
+		return avro.Bytes, nil
+	default:
+		return "", errors.New("unknown sqlite type")
+	}
 }
 
-// FromBytes returns the avro schema from the serialized avro schema
-func FromBytes(b []byte) (*AvroSchema, error) {
-	return nil, errors.New("not implemented")
-}
-
-// ToAvroData returns the avro data for the sqlite data
-func ToAvroData(data []map[string]interface{}) ([]byte, error) {
-	return nil, errors.New("not implemented")
+func SqliteToAvroSchema(sqliteType SQLiteType) (avro.Schema, error) {
+	switch sqliteType {
+	case SQLiteNull:
+		return NullSchema, nil
+	case SQLiteInteger:
+		return LongSchema, nil
+	case SQLiteReal:
+		return DoubleSchema, nil
+	case SQLiteText:
+		return StringSchema, nil
+	case SQLiteBlob:
+		return BytesSchema, nil
+	default:
+		return nil, errors.New("unknown sqlite type")
+	}
 }
