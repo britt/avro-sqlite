@@ -8,14 +8,15 @@ import (
 	"github.com/hamba/avro"
 )
 
-type SQLiteType string
+type sqliteType string
 
+// TODO: make private
 const (
-	SQLiteNull           SQLiteType = "null"
-	SQLiteInteger        SQLiteType = "integer"
-	SQLiteReal           SQLiteType = "real"
-	SQLiteText           SQLiteType = "text"
-	SQLiteBlob           SQLiteType = "blob"
+	SQLiteNull           sqliteType = "null"
+	SQLiteInteger        sqliteType = "integer"
+	SQLiteReal           sqliteType = "real"
+	SQLiteText           sqliteType = "text"
+	SQLiteBlob           sqliteType = "blob"
 	SQLiteIntegerDefault            = 0
 	SQLiteRealDefault               = 0.0
 	SQLiteTextDefault               = ""
@@ -30,15 +31,15 @@ type SqliteSchema struct {
 
 type SchemaField struct {
 	Name               string        `json:"name"`
-	Type               SQLiteType    `json:"type"`
+	Type               sqliteType    `json:"type"`
 	Nullable           bool          `json:"nullable"`
-	Default            interface{}   `json:"default,omitempty"`
+	Default            any           `json:"default,omitempty"`
 	NumericPrecision   sql.NullInt64 `json:"numeric_precision,omitempty"`
 	NumericScale       sql.NullInt64 `json:"numeric_scale,omitempty"`
 	CharacterMaxLength sql.NullInt64 `json:"character_max_length,omitempty"`
 }
 
-func (s SchemaField) AvroDefault() interface{} {
+func (s SchemaField) AvroDefault() any {
 	if s.Nullable || s.Type == SQLiteNull {
 		return nil
 	}
@@ -68,7 +69,7 @@ func (s SchemaField) AvroDefault() interface{} {
 func (s *SqliteSchema) ToAvro() (avro.Schema, error) {
 	fields := []*avro.Field{}
 	for _, field := range s.Fields {
-		s, err := SqliteToAvroSchema(field.Type)
+		s, err := sqliteToAvroSchema(field.Type)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert sqlite type to avro schema: [%w]", err)
 		}
@@ -165,7 +166,7 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 
 		schema.Fields = append(schema.Fields, SchemaField{
 			Name:               columnName,
-			Type:               SQLiteType(dataType),
+			Type:               sqliteType(dataType),
 			Nullable:           isNullable,
 			Default:            string(defaultValueBytes), // TODO: parse appropriate type
 			NumericPrecision:   numPrecision,
@@ -178,8 +179,8 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 }
 
 // ReadData returns the data from the sqlite database
-func ReadData(db *sql.DB, table string) ([]map[string]interface{}, error) {
-	data := []map[string]interface{}{}
+func ReadData(db *sql.DB, table string) ([]map[string]any, error) {
+	data := []map[string]any{}
 	// Read the data from each table
 	rows, err := db.Query(fmt.Sprintf("SELECT * FROM %s", table))
 	if err != nil {
@@ -204,7 +205,7 @@ func ReadData(db *sql.DB, table string) ([]map[string]interface{}, error) {
 			return data, err
 		}
 
-		entry := map[string]interface{}{}
+		entry := map[string]any{}
 		for i, col := range columns {
 			val := values[i]
 			entry[col] = val
