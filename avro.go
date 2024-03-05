@@ -27,15 +27,15 @@ func AvroToSqliteSchema(schema avro.Schema) (*SqliteSchema, error) {
 // https://avro.apache.org/docs/1.8.2/spec.html#schema_primitive
 func sqliteToAvroSchema(t sqliteType) (avro.Schema, error) {
 	switch t {
-	case SQLiteNull:
+	case sqliteNull:
 		return nullSchema, nil
-	case SQLiteInteger:
+	case sqliteInteger:
 		return longSchema, nil
-	case SQLiteReal:
+	case sqliteReal:
 		return doubleSchema, nil
-	case SQLiteText:
+	case sqliteText:
 		return stringSchema, nil
-	case SQLiteBlob:
+	case sqliteBlob:
 		return bytesSchema, nil
 	default:
 		return nil, errors.New("unknown sqlite type")

@@ -1,6 +1,7 @@
 package avrosqlite
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -10,19 +11,18 @@ import (
 
 type sqliteType string
 
-// TODO: make private
 const (
-	SQLiteNull           sqliteType = "null"
-	SQLiteInteger        sqliteType = "integer"
-	SQLiteReal           sqliteType = "real"
-	SQLiteText           sqliteType = "text"
-	SQLiteBlob           sqliteType = "blob"
-	SQLiteIntegerDefault            = 0
-	SQLiteRealDefault               = 0.0
-	SQLiteTextDefault               = ""
+	sqliteNull           sqliteType = "null"
+	sqliteInteger        sqliteType = "integer"
+	sqliteReal           sqliteType = "real"
+	sqliteText           sqliteType = "text"
+	sqliteBlob           sqliteType = "blob"
+	sqliteIntegerDefault            = 0
+	sqliteRealDefault               = 0.0
+	sqliteTextDefault               = ""
 )
 
-var SQLiteBlobDefault = []byte{}
+var sqliteBlobDefault = []byte{}
 
 type SqliteSchema struct {
 	Table  string        `json:"table"`
@@ -40,26 +40,26 @@ type SchemaField struct {
 }
 
 func (s SchemaField) AvroDefault() any {
-	if s.Nullable || s.Type == SQLiteNull {
+	if s.Nullable || s.Type == sqliteNull {
 		return nil
 	}
 
 	switch s.Type {
-	case SQLiteInteger:
+	case sqliteInteger:
 		if s.Default == nil {
-			return SQLiteIntegerDefault
+			return sqliteIntegerDefault
 		}
-	case SQLiteReal:
+	case sqliteReal:
 		if s.Default == nil {
-			return SQLiteRealDefault
+			return sqliteRealDefault
 		}
-	case SQLiteText:
+	case sqliteText:
 		if s.Default == nil {
-			return SQLiteTextDefault
+			return sqliteTextDefault
 		}
-	case SQLiteBlob:
+	case sqliteBlob:
 		if s.Default == nil {
-			return SQLiteBlobDefault
+			return sqliteBlobDefault
 		}
 	}
 	return s.Default
@@ -108,7 +108,7 @@ func ListTables(db *sql.DB) ([]string, error) {
 	return tables, nil
 }
 
-const SQLITE_TABLE_INFO_QUERY = `
+const sqliteTableInfoQuery = `
 SELECT 
     '%s' AS TABLE_SCHEMA,
     "name" AS COLUMN_NAME,
@@ -126,7 +126,7 @@ FROM
 func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 	// Read the schema of the table
 	rows, err := db.Query(
-		fmt.Sprintf(SQLITE_TABLE_INFO_QUERY, tableName, tableName, tableName),
+		fmt.Sprintf(sqliteTableInfoQuery, tableName, tableName, tableName),
 	)
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 			Name:               columnName,
 			Type:               sqliteType(dataType),
 			Nullable:           isNullable,
-			Default:            string(defaultValueBytes), // TODO: parse appropriate type
+			Default:            defaultValueBytes, // TODO: parse appropriate type
 			NumericPrecision:   numPrecision,
 			NumericScale:       numScale,
 			CharacterMaxLength: charBytesLen,
@@ -178,8 +178,25 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 	return schema, nil
 }
 
-// ReadData returns the data from the sqlite database
-func ReadData(db *sql.DB, table string) ([]map[string]any, error) {
+// ReadData reads the data from the sqlite database table and returns an AVRO encoded byte array
+func ReadData(db *sql.DB, table string, schema avro.Schema) ([]byte, error) {
+	data, err := loadData(db, table)
+	if err != nil {
+		return nil, err
+	}
+
+	w := bytes.NewBuffer([]byte{})
+	e := avro.NewEncoderForSchema(schema, w)
+	for _, d := range data {
+		err = e.Encode(d)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return w.Bytes(), nil
+}
+
+func loadData(db *sql.DB, table string) ([]map[string]any, error) {
 	data := []map[string]any{}
 	// Read the data from each table
 	rows, err := db.Query(fmt.Sprintf("SELECT * FROM %s", table))
