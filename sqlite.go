@@ -40,7 +40,7 @@ type SchemaField struct {
 }
 
 func (s SchemaField) AvroDefault() any {
-	if s.Nullable || s.Type == sqliteNull {
+	if s.Type == sqliteNull {
 		return nil
 	}
 
