@@ -17,12 +17,15 @@ const (
 	sqliteReal           sqliteType = "real"
 	sqliteText           sqliteType = "text"
 	sqliteBlob           sqliteType = "blob"
+	sqliteBoolean        sqliteType = "boolean"
 	sqliteIntegerDefault            = 0
 	sqliteRealDefault               = 0.0
 	sqliteTextDefault               = ""
 )
 
 var sqliteBlobDefault = []byte{}
+
+var sqliteSpecialTables = []string{"sqlite_sequence"}
 
 type SqliteSchema struct {
 	Table  string        `json:"table"`
@@ -63,6 +66,12 @@ func (s SchemaField) AvroDefault() interface{} {
 		if _, ok := s.Default.([]byte); !ok {
 			return sqliteBlobDefault
 		}
+	case sqliteBoolean:
+		if b, ok := s.Default.(int); !ok {
+			return false
+		} else {
+			return b != 0
+		}
 	}
 	return s.Default
 }
@@ -76,7 +85,6 @@ func (s *SqliteSchema) ToAvro() (avro.Schema, error) {
 			return nil, fmt.Errorf("failed to convert sqlite type to avro schema: [%w]", err)
 		}
 
-		fmt.Println("Creating AVRO field: ", field.Name, s, field.AvroDefault())
 		avroField, err := avro.NewField(field.Name, s, field.AvroDefault())
 		if err != nil {
 			return nil, fmt.Errorf("failed to create avro field: [%w]", err)
@@ -106,6 +114,18 @@ func ListTables(db *sql.DB) ([]string, error) {
 		if err != nil {
 			return tables, err
 		}
+
+		isSpecial := false
+		for _, specialTable := range sqliteSpecialTables {
+			if tableName == specialTable {
+				isSpecial = true
+				break
+			}
+		}
+		if isSpecial {
+			continue
+		}
+
 		tables = append(tables, tableName)
 	}
 	return tables, nil

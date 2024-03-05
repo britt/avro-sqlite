@@ -2,17 +2,19 @@ package avrosqlite
 
 import (
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/hamba/avro"
 )
 
 var (
-	nullSchema   = avro.MustParse(`{"type": "null"}`)
-	longSchema   = avro.MustParse(`{"type": "long"}`)
-	doubleSchema = avro.MustParse(`{"type": "double"}`)
-	stringSchema = avro.MustParse(`{"type": "string"}`)
-	bytesSchema  = avro.MustParse(`{"type": "bytes"}`)
+	nullSchema    = avro.MustParse(`{"type": "null"}`)
+	longSchema    = avro.MustParse(`{"type": "long"}`)
+	doubleSchema  = avro.MustParse(`{"type": "double"}`)
+	stringSchema  = avro.MustParse(`{"type": "string"}`)
+	bytesSchema   = avro.MustParse(`{"type": "bytes"}`)
+	booleanSchema = avro.MustParse(`{"type": "boolean"}`)
 )
 
 // AvroToSqliteSchema returns the sqlite schema for the avro schema
@@ -38,8 +40,10 @@ func sqliteToAvroSchema(t sqliteType) (avro.Schema, error) {
 		return stringSchema, nil
 	case sqliteBlob:
 		return bytesSchema, nil
+	case sqliteBoolean:
+		return booleanSchema, nil
 	default:
-		return nil, errors.New("unknown sqlite type")
+		return nil, fmt.Errorf("unknown sqlite type: %s", t)
 	}
 }
 
