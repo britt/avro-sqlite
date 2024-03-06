@@ -4,7 +4,10 @@ go 1.21.6
 
 require github.com/hamba/avro v1.8.0
 
-require github.com/stretchr/testify v1.7.5 // indirect
+require (
+	github.com/golang/snappy v0.0.4 // indirect
+	github.com/stretchr/testify v1.7.5 // indirect
+)
 
 require (
 	github.com/json-iterator/go v1.1.12 // indirect
