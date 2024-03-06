@@ -19,6 +19,7 @@ var (
 
 // AvroToSqliteSchema returns the sqlite schema for the avro schema
 func AvroToSqliteSchema(schema avro.Schema) (*SqliteSchema, error) {
+
 	return nil, errors.New("not implemented")
 }
 

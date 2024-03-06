@@ -30,6 +30,7 @@ var sqliteSpecialTables = []string{"sqlite_sequence"}
 type SqliteSchema struct {
 	Table  string        `json:"table"`
 	Fields []SchemaField `json:"fields"`
+	Sql    string        `json:"sql"`
 }
 
 type SchemaField struct {
@@ -145,6 +146,12 @@ FROM
     pragma_table_info("%s")
 `
 
+const sqliteTableCreationSqlQuery = `
+SELECT sql
+FROM sqlite_master
+WHERE type = 'table' AND name = '%s'
+`
+
 // ReadSchema returns the schema of the sqlite table
 func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 	// Read the schema of the table
@@ -156,9 +163,23 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 	}
 	defer rows.Close()
 
+	var createSql string
+	sqlRows, err := db.Query(fmt.Sprintf(sqliteTableCreationSqlQuery, tableName))
+	if err != nil {
+		return nil, err
+	}
+	defer sqlRows.Close()
+	if sqlRows.Next() {
+		err = sqlRows.Scan(&createSql)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	schema := &SqliteSchema{
 		Table:  tableName,
 		Fields: []SchemaField{},
+		Sql:    createSql,
 	}
 
 	var (
