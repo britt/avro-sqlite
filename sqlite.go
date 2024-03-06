@@ -1,7 +1,6 @@
 package avrosqlite
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"strconv"
@@ -242,25 +241,6 @@ func toDefaultValueType(dataType string, s string) (any, error) {
 		return i != 0, nil
 	}
 	return nil, fmt.Errorf("unknown sqlite type: %s", dataType)
-}
-
-// TODO: rename
-// ReadData reads the data from the sqlite database table and returns an AVRO encoded byte array
-func ReadData(db *sql.DB, table string, schema avro.Schema) ([]byte, error) {
-	data, err := LoadData(db, table)
-	if err != nil {
-		return nil, err
-	}
-
-	w := bytes.NewBuffer([]byte{})
-	e := avro.NewEncoderForSchema(schema, w)
-	for _, d := range data {
-		err = e.Encode(d)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return w.Bytes(), nil
 }
 
 // LoadData loads the data from the sqlite database table

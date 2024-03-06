@@ -1,7 +1,6 @@
 package avrosqlite
 
 import (
-	"bytes"
 	"database/sql"
 	"reflect"
 	"testing"
@@ -330,73 +329,6 @@ func TestReadSchema(t *testing.T) {
 				if field.Default != avro.NoDefault {
 					t.Errorf("ReadSchema() Default = %v, want %v", got, tt.want)
 				}
-			}
-		})
-	}
-}
-
-func TestReadData(t *testing.T) {
-	fooSchema := avro.MustParse(`{"name":"com.github.britt.avrosqlite.foo","type":"record","fields":[{"name":"id","type":"long","default":0},{"name":"name","type":"string","default":"meatballs"}]}`)
-	fooBytes := bytes.NewBuffer([]byte{})
-	e := avro.NewEncoderForSchema(fooSchema, fooBytes)
-	for _, d := range []map[string]any{{"id": int64(1), "name": "bar"}, {"id": int64(2), "name": "bat"}, {"id": int64(3), "name": "baz"}} {
-		err = e.Encode(d)
-		if err != nil {
-			t.Errorf("ReadData() failed to setup test, error = %v", err)
-		}
-	}
-
-	meatSchema := avro.MustParse(`{"name":"com.github.britt.avrosqlite.meats","type":"record","fields":[{"name":"id","type":"long","default":0},{"name":"name","type":"string","default":"meatballs"},{"name":"description","type":"string","default":"meatballs"}]}`)
-	meatBytes := bytes.NewBuffer([]byte{})
-	e = avro.NewEncoderForSchema(meatSchema, meatBytes)
-	for _, d := range []map[string]any{{"id": int64(1), "name": "beef", "description": "a cow"}, {"id": int64(2), "name": "pork", "description": "a pig"}, {"id": int64(3), "name": "chicken", "description": "a bird"}} {
-		err = e.Encode(d)
-		if err != nil {
-			t.Errorf("ReadData() failed to setup test, error = %v", err)
-		}
-	}
-
-	type args struct {
-		db     *sql.DB
-		table  string
-		schema avro.Schema
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    []byte
-		wantErr bool
-	}{
-		{
-			name: "happy_path",
-			args: args{
-				db:     testDB,
-				table:  "foo",
-				schema: fooSchema,
-			},
-			want:    fooBytes.Bytes(),
-			wantErr: false,
-		},
-		{
-			name: "happy_path",
-			args: args{
-				db:     testDB,
-				table:  "meats",
-				schema: meatSchema,
-			},
-			want:    meatBytes.Bytes(),
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ReadData(tt.args.db, tt.args.table, tt.args.schema)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ReadData() %s error = %v, wantErr %v", tt.args.table, err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReadData() %s = %v, want %v", tt.args.table, got, tt.want)
 			}
 		})
 	}
