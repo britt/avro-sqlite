@@ -22,13 +22,13 @@ func AvroToSqliteSchema(schema avro.Schema) (*SqliteSchema, error) {
 	return nil, errors.New("not implemented")
 }
 
-// sqliteToAvroSchema converts a sqlite type to an avro primitve schema.
+// sqliteTypeToAvroSchema converts a sqlite type to an avro primitve schema.
 // Sqlite typoes are convered into the largest avro type that can hold the sqlite type.
 // This means that representations are not as dense as they could be, but it is a simple
 // way to ensure compatibility.
 // https://www.sqlite.org/datatype3.html
 // https://avro.apache.org/docs/1.8.2/spec.html#schema_primitive
-func sqliteToAvroSchema(t sqliteType) (avro.Schema, error) {
+func sqliteTypeToAvroSchema(t sqliteType) (avro.Schema, error) {
 	switch t {
 	case sqliteNull:
 		return nullSchema, nil
@@ -48,15 +48,15 @@ func sqliteToAvroSchema(t sqliteType) (avro.Schema, error) {
 }
 
 // ReadAvro reads avro records from an io.Reader into a slice of T
-func ReadAvro[T any](schema avro.Schema, r io.Reader) ([]T, error) {
-	out := []T{}
+func ReadAvro(schema avro.Schema, r io.Reader) ([]map[string]any, error) {
+	out := []map[string]any{}
 
 	decoder, err := avro.NewDecoder(schema.String(), r)
 	if err != nil {
 		return out, err
 	}
 
-	var st T
+	var st map[string]any
 	for err == nil {
 		err = decoder.Decode(&st)
 		if err == io.EOF {

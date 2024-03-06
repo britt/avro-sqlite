@@ -80,7 +80,7 @@ func (s SchemaField) AvroDefault() interface{} {
 func (s *SqliteSchema) ToAvro() (avro.Schema, error) {
 	fields := []*avro.Field{}
 	for _, field := range s.Fields {
-		s, err := sqliteToAvroSchema(field.Type)
+		s, err := sqliteTypeToAvroSchema(field.Type)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert sqlite type to avro schema: [%w]", err)
 		}
