@@ -213,7 +213,7 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 			Name:     columnName,
 			Type:     sqliteType(dataType),
 			Nullable: isNullable,
-			Default:  defaultValueBytes, // TODO: parse appropriate type
+			Default:  defaultValueBytes,
 		})
 	}
 
