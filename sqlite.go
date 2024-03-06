@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/hamba/avro"
@@ -187,13 +188,13 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 	}
 
 	var (
-		tableSchema       string
-		columnName        string
-		dataType          string
-		isNullableStr     string
-		isNullable        bool
-		defaultValue      sql.NullString
-		defaultValueBytes []byte
+		tableSchema        string
+		columnName         string
+		dataType           string
+		isNullableStr      string
+		isNullable         bool
+		defaultValue       sql.NullString
+		defaultSchemaValue any
 	)
 	for rows.Next() {
 		err = rows.Scan(&tableSchema, &columnName, &dataType, &isNullableStr, &defaultValue)
@@ -204,20 +205,43 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 		isNullableStr = strings.ToLower(isNullableStr)
 		isNullable = isNullableStr == "yes"
 		if defaultValue.Valid {
-			defaultValueBytes = []byte(defaultValue.String)
+			// TODO: handle this error?
+			defaultSchemaValue, _ = toDefaultValueType(dataType, defaultValue.String)
 		} else {
-			defaultValueBytes = nil
+			defaultSchemaValue = avro.NoDefault
 		}
 
 		schema.Fields = append(schema.Fields, SchemaField{
 			Name:     columnName,
 			Type:     sqliteType(dataType),
 			Nullable: isNullable,
-			Default:  defaultValueBytes,
+			Default:  defaultSchemaValue,
 		})
 	}
 
 	return schema, nil
+}
+
+func toDefaultValueType(dataType string, s string) (any, error) {
+	switch sqliteType(dataType) {
+	case sqliteNull:
+		return nil, nil
+	case sqliteInteger:
+		return strconv.ParseInt(s, 10, 64)
+	case sqliteReal:
+		return strconv.ParseFloat(s, 64)
+	case sqliteText:
+		return s, nil
+	case sqliteBlob:
+		return []byte(s), nil
+	case sqliteBoolean:
+		i, err := strconv.ParseInt(s, 10, 32)
+		if err != nil {
+			return false, err
+		}
+		return i != 0, nil
+	}
+	return nil, fmt.Errorf("unknown sqlite type: %s", dataType)
 }
 
 // TODO: rename

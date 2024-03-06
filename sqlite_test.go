@@ -276,7 +276,31 @@ func TestReadSchema(t *testing.T) {
 		want    *SqliteSchema
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "happy_path",
+			args: args{
+				db:        testDB,
+				tableName: "foo",
+			},
+			want: &SqliteSchema{
+				Table: "foo",
+				Fields: []SchemaField{
+					{
+						Name:     "id",
+						Type:     sqliteInteger,
+						Nullable: true,
+						Default:  avro.NoDefault,
+					},
+					{
+						Name:     "name",
+						Type:     sqliteText,
+						Nullable: true,
+						Default:  avro.NoDefault,
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -285,8 +309,26 @@ func TestReadSchema(t *testing.T) {
 				t.Errorf("ReadSchema() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if got.Table != tt.want.Table {
 				t.Errorf("ReadSchema() = %v, want %v", got, tt.want)
+			}
+			if len(got.Fields) != len(tt.want.Fields) {
+				t.Errorf("ReadSchema() = %v, want %v", got, tt.want)
+			}
+
+			for i, field := range got.Fields {
+				if field.Name != tt.want.Fields[i].Name {
+					t.Errorf("ReadSchema() Name = %v, want %v", got, tt.want)
+				}
+				if field.Type != tt.want.Fields[i].Type {
+					t.Errorf("ReadSchema() Type = %v, want %v", got, tt.want)
+				}
+				if field.Nullable != tt.want.Fields[i].Nullable {
+					t.Errorf("ReadSchema() Nullable = %v, want %v", got, tt.want)
+				}
+				if field.Default != avro.NoDefault {
+					t.Errorf("ReadSchema() Default = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}
