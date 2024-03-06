@@ -263,6 +263,7 @@ func ReadData(db *sql.DB, table string, schema avro.Schema) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
+// LoadData loads the data from the sqlite database table
 func LoadData(db *sql.DB, table string) ([]map[string]any, error) {
 	data := []map[string]any{}
 	// Read the data from each table

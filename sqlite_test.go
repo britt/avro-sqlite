@@ -413,7 +413,24 @@ func Test_LoadData(t *testing.T) {
 		want    []map[string]any
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "happy_path#foo",
+			args: args{
+				db:    testDB,
+				table: "foo",
+			},
+			want:    []map[string]any{{"id": int64(1), "name": "bar"}, {"id": int64(2), "name": "bat"}, {"id": int64(3), "name": "baz"}},
+			wantErr: false,
+		},
+		{
+			name: "happy_path#meats",
+			args: args{
+				db:    testDB,
+				table: "meats",
+			},
+			want:    []map[string]any{{"id": int64(1), "name": "beef", "description": "a cow"}, {"id": int64(2), "name": "pork", "description": "a pig"}, {"id": int64(3), "name": "chicken", "description": "a bird"}},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
