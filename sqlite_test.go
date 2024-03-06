@@ -152,7 +152,7 @@ func TestReadData(t *testing.T) {
 	}
 }
 
-func Test_loadData(t *testing.T) {
+func Test_LoadData(t *testing.T) {
 	type args struct {
 		db    *sql.DB
 		table string
@@ -167,7 +167,7 @@ func Test_loadData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := loadData(tt.args.db, tt.args.table)
+			got, err := LoadData(tt.args.db, tt.args.table)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("loadData() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -223,7 +223,7 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 // TODO: rename
 // ReadData reads the data from the sqlite database table and returns an AVRO encoded byte array
 func ReadData(db *sql.DB, table string, schema avro.Schema) ([]byte, error) {
-	data, err := loadData(db, table)
+	data, err := LoadData(db, table)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func ReadData(db *sql.DB, table string, schema avro.Schema) ([]byte, error) {
 	return w.Bytes(), nil
 }
 
-func loadData(db *sql.DB, table string) ([]map[string]any, error) {
+func LoadData(db *sql.DB, table string) ([]map[string]any, error) {
 	data := []map[string]any{}
 	// Read the data from each table
 	rows, err := db.Query(fmt.Sprintf("SELECT * FROM %s", table))
