@@ -6,7 +6,54 @@ import (
 	"testing"
 
 	"github.com/hamba/avro"
+	_ "github.com/mattn/go-sqlite3"
 )
+
+var testDB *sql.DB
+var err error
+
+func init() {
+	testDB, err = sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = testDB.Exec("CREATE TABLE IF NOT EXISTS foo (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)")
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = testDB.Exec("INSERT INTO foo (name) VALUES ('bar')")
+	if err != nil {
+		panic(err)
+	}
+	_, err = testDB.Exec("INSERT INTO foo (name) VALUES ('bat')")
+	if err != nil {
+		panic(err)
+	}
+	_, err = testDB.Exec("INSERT INTO foo (name) VALUES ('baz')")
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = testDB.Exec("CREATE TABLE IF NOT EXISTS meats (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, description TEXT)")
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = testDB.Exec("INSERT INTO meats (name, description) VALUES ('beef', 'a cow')")
+	if err != nil {
+		panic(err)
+	}
+	_, err = testDB.Exec("INSERT INTO meats (name, description) VALUES ('pork', 'a pig')")
+	if err != nil {
+		panic(err)
+	}
+	_, err = testDB.Exec("INSERT INTO meats (name, description) VALUES ('chicken', 'a bird')")
+	if err != nil {
+		panic(err)
+	}
+}
 
 func TestSchemaField_AvroDefault(t *testing.T) {
 	type fields struct {
@@ -181,28 +228,19 @@ func TestSqliteSchema_ToAvro(t *testing.T) {
 }
 
 func TestListTables(t *testing.T) {
-	type args struct {
-		db *sql.DB
+	got, err := ListTables(testDB)
+	if err != nil {
+		t.Errorf("ListTables() error = %v", err)
 	}
-	tests := []struct {
-		name    string
-		args    args
-		want    []string
-		wantErr bool
-	}{
-		// TODO: Add test cases.
+
+	if len(got) != 2 {
+		t.Errorf("ListTables() = %v, want %v", got, []string{"foo", "meats"})
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ListTables(tt.args.db)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ListTables() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ListTables() = %v, want %v", got, tt.want)
-			}
-		})
+
+	for _, table := range got {
+		if table != "foo" && table != "meats" {
+			t.Errorf("ListTables() = %v, want %v", got, []string{"foo", "meats"})
+		}
 	}
 }
 
