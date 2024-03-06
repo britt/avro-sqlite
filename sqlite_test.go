@@ -28,13 +28,10 @@ func TestSchemaField_AvroDefault(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := SchemaField{
-				Name:               tt.fields.Name,
-				Type:               tt.fields.Type,
-				Nullable:           tt.fields.Nullable,
-				Default:            tt.fields.Default,
-				NumericPrecision:   tt.fields.NumericPrecision,
-				NumericScale:       tt.fields.NumericScale,
-				CharacterMaxLength: tt.fields.CharacterMaxLength,
+				Name:     tt.fields.Name,
+				Type:     tt.fields.Type,
+				Nullable: tt.fields.Nullable,
+				Default:  tt.fields.Default,
 			}
 			if got := s.AvroDefault(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SchemaField.AvroDefault() = %v, want %v", got, tt.want)

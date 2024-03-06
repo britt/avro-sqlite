@@ -34,13 +34,10 @@ type SqliteSchema struct {
 }
 
 type SchemaField struct {
-	Name               string        `json:"name"`
-	Type               sqliteType    `json:"type"`
-	Nullable           bool          `json:"nullable"`
-	Default            any           `json:"default,omitempty"`
-	NumericPrecision   sql.NullInt64 `json:"numeric_precision,omitempty"`
-	NumericScale       sql.NullInt64 `json:"numeric_scale,omitempty"`
-	CharacterMaxLength sql.NullInt64 `json:"character_max_length,omitempty"`
+	Name     string     `json:"name"`
+	Type     sqliteType `json:"type"`
+	Nullable bool       `json:"nullable"`
+	Default  any        `json:"default,omitempty"`
 }
 
 func (s SchemaField) AvroDefault() interface{} {
@@ -81,7 +78,7 @@ func (s SchemaField) AvroDefault() interface{} {
 func (s *SqliteSchema) ToAvro() (avro.Schema, error) {
 	fields := []*avro.Field{}
 	for _, field := range s.Fields {
-		s, err := sqliteTypeToAvroSchema(field.Type)
+		s, err := sqliteTypeToAvroSchema(field.Type, field.Nullable)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert sqlite type to avro schema: [%w]", err)
 		}
@@ -90,6 +87,7 @@ func (s *SqliteSchema) ToAvro() (avro.Schema, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create avro field: [%w]", err)
 		}
+
 		fields = append(fields, avroField)
 	}
 	record, err := avro.NewRecordSchema(s.Table, "com.github.britt.avrosqlite", fields)
@@ -132,16 +130,22 @@ func ListTables(db *sql.DB) ([]string, error) {
 	return tables, nil
 }
 
+func tableExists(db *sql.DB, table string) (bool, error) {
+	rows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' AND name=?", table)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	return rows.Next(), nil
+}
+
 const sqliteTableInfoQuery = `
 SELECT 
     '%s' AS TABLE_SCHEMA,
     "name" AS COLUMN_NAME,
     "type" AS DATA_TYPE,
     CASE when "notnull" = 0 THEN 'YES' ELSE 'NO' END AS IS_NULLABLE,
-    "dflt_value" AS COLUMN_DEFAULT,
-    null AS NUMERIC_PRECISION,
-    null AS NUMERIC_SCALE,
-    CASE when "type" = 'TEXT' THEN (SELECT MAX(LENGTH(name)) FROM %s) END AS CHARACTER_MAXIMUM_LENGTH
+    "dflt_value" AS COLUMN_DEFAULT
 FROM 
     pragma_table_info("%s")
 `
@@ -156,7 +160,7 @@ WHERE type = 'table' AND name = '%s'
 func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 	// Read the schema of the table
 	rows, err := db.Query(
-		fmt.Sprintf(sqliteTableInfoQuery, tableName, tableName, tableName),
+		fmt.Sprintf(sqliteTableInfoQuery, tableName, tableName),
 	)
 	if err != nil {
 		return nil, err
@@ -190,12 +194,9 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 		isNullable        bool
 		defaultValue      sql.NullString
 		defaultValueBytes []byte
-		numPrecision      sql.NullInt64
-		numScale          sql.NullInt64
-		charBytesLen      sql.NullInt64
 	)
 	for rows.Next() {
-		err = rows.Scan(&tableSchema, &columnName, &dataType, &isNullableStr, &defaultValue, &numPrecision, &numScale, &charBytesLen)
+		err = rows.Scan(&tableSchema, &columnName, &dataType, &isNullableStr, &defaultValue)
 		if err != nil {
 			return nil, err
 		}
@@ -209,19 +210,17 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 		}
 
 		schema.Fields = append(schema.Fields, SchemaField{
-			Name:               columnName,
-			Type:               sqliteType(dataType),
-			Nullable:           isNullable,
-			Default:            defaultValueBytes, // TODO: parse appropriate type
-			NumericPrecision:   numPrecision,
-			NumericScale:       numScale,
-			CharacterMaxLength: charBytesLen,
+			Name:     columnName,
+			Type:     sqliteType(dataType),
+			Nullable: isNullable,
+			Default:  defaultValueBytes, // TODO: parse appropriate type
 		})
 	}
 
 	return schema, nil
 }
 
+// TODO: rename
 // ReadData reads the data from the sqlite database table and returns an AVRO encoded byte array
 func ReadData(db *sql.DB, table string, schema avro.Schema) ([]byte, error) {
 	data, err := loadData(db, table)
