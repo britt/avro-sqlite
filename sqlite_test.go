@@ -23,7 +23,116 @@ func TestSchemaField_AvroDefault(t *testing.T) {
 		fields fields
 		want   interface{}
 	}{
-		// TODO: Add test cases.
+		{
+			name: "nullable *",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteInteger,
+				Nullable: true,
+				Default:  nil,
+			},
+			want: avro.NoDefault,
+		},
+		{
+			name: "integer",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteInteger,
+				Nullable: false,
+				Default:  int64(4),
+			},
+			want: int64(4),
+		},
+		{
+			name: "real",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteReal,
+				Nullable: false,
+				Default:  0.762,
+			},
+			want: 0.762,
+		},
+		{
+			name: "text",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteText,
+				Nullable: false,
+				Default:  "Luz Noceda",
+			},
+			want: "Luz Noceda",
+		},
+		{
+			name: "blob",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteBlob,
+				Nullable: false,
+				Default:  []byte("Edalyn Clawthorne"),
+			},
+			want: []byte("Edalyn Clawthorne"),
+		},
+		{
+			name: "boolean",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteBoolean,
+				Nullable: false,
+				Default:  4,
+			},
+			want: true,
+		},
+		{
+			name: "integer bad default",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteInteger,
+				Nullable: false,
+				Default:  "meatballs",
+			},
+			want: sqliteIntegerDefault,
+		},
+		{
+			name: "real bad default",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteReal,
+				Nullable: false,
+				Default:  "meatballs",
+			},
+			want: sqliteRealDefault,
+		},
+		{
+			name: "text bad default",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteText,
+				Nullable: false,
+				Default:  42,
+			},
+			want: sqliteTextDefault,
+		},
+		{
+			name: "blob bad default",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteBlob,
+				Nullable: false,
+				Default:  []int{1, 2, 3},
+			},
+			want: sqliteBlobDefault,
+		},
+		{
+			name: "boolean bad default",
+			fields: fields{
+				Name:     "id",
+				Type:     sqliteBoolean,
+				Nullable: false,
+				Default:  "meatballs",
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
