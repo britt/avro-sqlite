@@ -60,7 +60,7 @@ func TableToOCF(db *sql.DB, table, fileName string) error {
 // SqliteToAvro writes the data from the sqlite database to a set of OCF files
 // and returns the paths of the files it creates. It is not atomic.
 // Errors can result in incomplete sets of files.
-func SqliteToAvro(db *sql.DB, table, path, prefix string) ([]string, error) {
+func SqliteToAvro(db *sql.DB, path, prefix string) ([]string, error) {
 	files := []string{}
 
 	tables, err := ListTables(db)
