@@ -204,10 +204,31 @@ func TestSqliteSchema_ToAvro(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    avro.Schema
+		want    [32]byte
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "happy_path",
+			fields: fields{
+				Table: "foo",
+				Fields: []SchemaField{
+					{
+						Name:     "id",
+						Type:     sqliteInteger,
+						Nullable: false,
+						Default:  int64(0),
+					},
+					{
+						Name:     "name",
+						Type:     sqliteText,
+						Nullable: false,
+						Default:  "meatballs",
+					},
+				},
+			},
+			want:    avro.MustParse(`{"name":"com.github.britt.avrosqlite.foo","type":"record","fields":[{"name":"id","type":"long","default":0},{"name":"name","type":"string","default":"meatballs"}]}`).Fingerprint(),
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -220,7 +241,7 @@ func TestSqliteSchema_ToAvro(t *testing.T) {
 				t.Errorf("SqliteSchema.ToAvro() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !reflect.DeepEqual(got.Fingerprint(), tt.want) {
 				t.Errorf("SqliteSchema.ToAvro() = %v, want %v", got, tt.want)
 			}
 		})
