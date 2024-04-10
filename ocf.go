@@ -2,6 +2,7 @@ package avrosqlite
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -79,6 +80,51 @@ func SqliteToAvro(db *sql.DB, path, prefix string) ([]string, error) {
 		if err != nil {
 			return files, err
 		}
+		files = append(files, fileName)
+	}
+
+	return files, nil
+}
+
+// SqliteSchemaToJSON writes the schema of the sqlite database to a set of JSON files
+func SqliteSchemaToJSON(db *sql.DB, path, prefix string) ([]string, error) {
+	files := []string{}
+
+	tables, err := ListTables(db)
+	if err != nil {
+		return files, err
+	}
+
+	savePath, err := filepath.Abs(path)
+	if err != nil {
+		return files, err
+	}
+
+	for _, table := range tables {
+		fileName := filepath.Join(savePath, fmt.Sprintf("%s%s.json", prefix, table))
+		schema, err := ReadSchema(db, table)
+		if err != nil {
+			return files, err
+		}
+
+		b, err := json.Marshal(schema)
+		if err != nil {
+			return files, err
+		}
+
+		f, err := os.Create(fileName)
+		if err != nil {
+			return files, err
+		}
+		defer f.Close()
+
+		if _, err = f.Write(b); err != nil {
+			return files, err
+		}
+		if err := f.Sync(); err != nil {
+			return files, err
+		}
+
 		files = append(files, fileName)
 	}
 
