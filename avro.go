@@ -92,20 +92,20 @@ func LoadAvro(db *sql.DB, schema *SqliteSchema, r io.Reader) (int64, error) {
 // way to ensure compatibility.
 // https://www.sqlite.org/datatype3.html
 // https://avro.apache.org/docs/1.8.2/spec.html#schema_primitive
-func sqliteTypeToAvroSchema(t sqliteType, nullable bool) (avro.Schema, error) {
+func sqliteTypeToAvroSchema(t SqliteType, nullable bool) (avro.Schema, error) {
 	var avroSchema avro.Schema
 	switch t {
-	case sqliteNull:
+	case SqliteNull:
 		avroSchema = nullSchema
-	case sqliteInteger:
+	case SqliteInteger:
 		avroSchema = longSchema
-	case sqliteReal:
+	case SqliteReal:
 		avroSchema = doubleSchema
-	case sqliteText:
+	case SqliteText:
 		avroSchema = stringSchema
-	case sqliteBlob:
+	case SqliteBlob:
 		avroSchema = bytesSchema
-	case sqliteBoolean:
+	case SqliteBoolean:
 		avroSchema = booleanSchema
 	default:
 		return nil, fmt.Errorf("unknown sqlite type: %s", t)

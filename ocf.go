@@ -13,6 +13,7 @@ import (
 
 // Enhancer is an interface for augmenting the schema and the data
 // with additional information or computed values.
+// TODO: add a way to modify table creation SQL
 type Enhancer interface {
 	// Schema modifies the schema in place before rows are read.
 	Schema(*SqliteSchema) error

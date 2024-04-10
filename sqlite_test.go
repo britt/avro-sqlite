@@ -58,7 +58,7 @@ func init() {
 func TestSchemaField_AvroDefault(t *testing.T) {
 	type fields struct {
 		Name               string
-		Type               sqliteType
+		Type               SqliteType
 		Nullable           bool
 		Default            any
 		NumericPrecision   sql.NullInt64
@@ -74,7 +74,7 @@ func TestSchemaField_AvroDefault(t *testing.T) {
 			name: "nullable *",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteInteger,
+				Type:     SqliteInteger,
 				Nullable: true,
 				Default:  nil,
 			},
@@ -84,7 +84,7 @@ func TestSchemaField_AvroDefault(t *testing.T) {
 			name: "integer",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteInteger,
+				Type:     SqliteInteger,
 				Nullable: false,
 				Default:  int64(4),
 			},
@@ -94,7 +94,7 @@ func TestSchemaField_AvroDefault(t *testing.T) {
 			name: "real",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteReal,
+				Type:     SqliteReal,
 				Nullable: false,
 				Default:  0.762,
 			},
@@ -104,7 +104,7 @@ func TestSchemaField_AvroDefault(t *testing.T) {
 			name: "text",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteText,
+				Type:     SqliteText,
 				Nullable: false,
 				Default:  "Luz Noceda",
 			},
@@ -114,7 +114,7 @@ func TestSchemaField_AvroDefault(t *testing.T) {
 			name: "blob",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteBlob,
+				Type:     SqliteBlob,
 				Nullable: false,
 				Default:  []byte("Edalyn Clawthorne"),
 			},
@@ -124,7 +124,7 @@ func TestSchemaField_AvroDefault(t *testing.T) {
 			name: "boolean",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteBoolean,
+				Type:     SqliteBoolean,
 				Nullable: false,
 				Default:  4,
 			},
@@ -134,47 +134,47 @@ func TestSchemaField_AvroDefault(t *testing.T) {
 			name: "integer bad default",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteInteger,
+				Type:     SqliteInteger,
 				Nullable: false,
 				Default:  "meatballs",
 			},
-			want: sqliteIntegerDefault,
+			want: SqliteIntegerDefault,
 		},
 		{
 			name: "real bad default",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteReal,
+				Type:     SqliteReal,
 				Nullable: false,
 				Default:  "meatballs",
 			},
-			want: sqliteRealDefault,
+			want: SqliteRealDefault,
 		},
 		{
 			name: "text bad default",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteText,
+				Type:     SqliteText,
 				Nullable: false,
 				Default:  42,
 			},
-			want: sqliteTextDefault,
+			want: SqliteTextDefault,
 		},
 		{
 			name: "blob bad default",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteBlob,
+				Type:     SqliteBlob,
 				Nullable: false,
 				Default:  []int{1, 2, 3},
 			},
-			want: sqliteBlobDefault,
+			want: SqliteBlobDefault,
 		},
 		{
 			name: "boolean bad default",
 			fields: fields{
 				Name:     "id",
-				Type:     sqliteBoolean,
+				Type:     SqliteBoolean,
 				Nullable: false,
 				Default:  "meatballs",
 			},
@@ -214,13 +214,13 @@ func TestSqliteSchema_ToAvro(t *testing.T) {
 				Fields: []SchemaField{
 					{
 						Name:     "id",
-						Type:     sqliteInteger,
+						Type:     SqliteInteger,
 						Nullable: false,
 						Default:  int64(0),
 					},
 					{
 						Name:     "name",
-						Type:     sqliteText,
+						Type:     SqliteText,
 						Nullable: false,
 						Default:  "meatballs",
 					},
@@ -287,13 +287,13 @@ func TestReadSchema(t *testing.T) {
 				Fields: []SchemaField{
 					{
 						Name:     "id",
-						Type:     sqliteInteger,
+						Type:     SqliteInteger,
 						Nullable: true,
 						Default:  avro.NoDefault,
 					},
 					{
 						Name:     "name",
-						Type:     sqliteText,
+						Type:     SqliteText,
 						Nullable: true,
 						Default:  avro.NoDefault,
 					},

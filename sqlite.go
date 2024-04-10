@@ -9,21 +9,21 @@ import (
 	"github.com/hamba/avro"
 )
 
-type sqliteType string
+type SqliteType string
 
 const (
-	sqliteNull           sqliteType = "null"
-	sqliteInteger        sqliteType = "integer"
-	sqliteReal           sqliteType = "real"
-	sqliteText           sqliteType = "text"
-	sqliteBlob           sqliteType = "blob"
-	sqliteBoolean        sqliteType = "boolean"
-	sqliteIntegerDefault            = 0
-	sqliteRealDefault               = 0.0
-	sqliteTextDefault               = ""
+	SqliteNull           SqliteType = "null"
+	SqliteInteger        SqliteType = "integer"
+	SqliteReal           SqliteType = "real"
+	SqliteText           SqliteType = "text"
+	SqliteBlob           SqliteType = "blob"
+	SqliteBoolean        SqliteType = "boolean"
+	SqliteIntegerDefault            = 0
+	SqliteRealDefault               = 0.0
+	SqliteTextDefault               = ""
 )
 
-var sqliteBlobDefault = []byte{}
+var SqliteBlobDefault = []byte{}
 
 var sqliteSpecialTables = []string{"sqlite_sequence"}
 
@@ -35,7 +35,7 @@ type SqliteSchema struct {
 
 type SchemaField struct {
 	Name     string     `json:"name"`
-	Type     sqliteType `json:"type"`
+	Type     SqliteType `json:"type"`
 	Nullable bool       `json:"nullable"`
 	Default  any        `json:"default,omitempty"`
 }
@@ -48,25 +48,25 @@ func (s SchemaField) AvroDefault() interface{} {
 	}
 
 	switch s.Type {
-	case sqliteNull:
+	case SqliteNull:
 		return nil
-	case sqliteInteger:
+	case SqliteInteger:
 		if _, ok := s.Default.(int64); !ok {
-			return sqliteIntegerDefault
+			return SqliteIntegerDefault
 		}
-	case sqliteReal:
+	case SqliteReal:
 		if _, ok := s.Default.(float64); !ok {
-			return sqliteRealDefault
+			return SqliteRealDefault
 		}
-	case sqliteText:
+	case SqliteText:
 		if _, ok := s.Default.(string); !ok {
-			return sqliteTextDefault
+			return SqliteTextDefault
 		}
-	case sqliteBlob:
+	case SqliteBlob:
 		if _, ok := s.Default.([]byte); !ok {
-			return sqliteBlobDefault
+			return SqliteBlobDefault
 		}
-	case sqliteBoolean:
+	case SqliteBoolean:
 		if b, ok := s.Default.(int); !ok {
 			return false
 		} else {
@@ -214,7 +214,7 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 
 		schema.Fields = append(schema.Fields, SchemaField{
 			Name:     columnName,
-			Type:     sqliteType(dataType),
+			Type:     SqliteType(dataType),
 			Nullable: isNullable,
 			Default:  defaultSchemaValue,
 		})
@@ -224,18 +224,18 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 }
 
 func toDefaultValueType(dataType string, s string) (any, error) {
-	switch sqliteType(dataType) {
-	case sqliteNull:
+	switch SqliteType(dataType) {
+	case SqliteNull:
 		return nil, nil
-	case sqliteInteger:
+	case SqliteInteger:
 		return strconv.ParseInt(s, 10, 64)
-	case sqliteReal:
+	case SqliteReal:
 		return strconv.ParseFloat(s, 64)
-	case sqliteText:
+	case SqliteText:
 		return s, nil
-	case sqliteBlob:
+	case SqliteBlob:
 		return []byte(s), nil
-	case sqliteBoolean:
+	case SqliteBoolean:
 		i, err := strconv.ParseInt(s, 10, 32)
 		if err != nil {
 			return false, err
