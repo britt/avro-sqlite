@@ -11,9 +11,31 @@ import (
 	"github.com/hamba/avro/ocf"
 )
 
+// Enhancer is an interface for augmenting the schema and the data
+// with additional information or computed values.
+type Enhancer interface {
+	// Schema modifies the schema in place before rows are read.
+	Schema(*SqliteSchema) error
+	// Row modifies each row in place before it is written.
+	Row(map[string]any) error
+}
+
+type noopEnhancer struct{}
+
+func (*noopEnhancer) Schema(*SqliteSchema) error { return nil }
+func (*noopEnhancer) Row(map[string]any) error   { return nil }
+
 // TableToOCF writes the data from the table to an OCF file.
-func TableToOCF(db *sql.DB, table, fileName string) error {
+func TableToOCF(db *sql.DB, table, fileName string, enhancer Enhancer) error {
+	if enhancer == nil {
+		enhancer = &noopEnhancer{}
+	}
+
 	schema, err := ReadSchema(db, table)
+	if err != nil {
+		return err
+	}
+	err = enhancer.Schema(schema)
 	if err != nil {
 		return err
 	}
@@ -41,6 +63,11 @@ func TableToOCF(db *sql.DB, table, fileName string) error {
 	}
 
 	for _, row := range data {
+		err = enhancer.Row(row)
+		if err != nil {
+			return err
+		}
+
 		err = enc.Encode(row)
 		if err != nil {
 			return err
@@ -59,8 +86,16 @@ func TableToOCF(db *sql.DB, table, fileName string) error {
 }
 
 // TableToJSON writes the schema of the table to a JSON file.
-func TableToJSON(db *sql.DB, table, fileName string) error {
+func TableToJSON(db *sql.DB, table, fileName string, enhancer Enhancer) error {
+	if enhancer == nil {
+		enhancer = &noopEnhancer{}
+	}
+
 	schema, err := ReadSchema(db, table)
+	if err != nil {
+		return err
+	}
+	err = enhancer.Schema(schema)
 	if err != nil {
 		return err
 	}
@@ -89,7 +124,7 @@ func TableToJSON(db *sql.DB, table, fileName string) error {
 // and returns the paths of the files it creates. It can optionally include a JSON version
 // of the schema in the same directory. The prefix is added to the front of the table name.
 // It is not atomic. Errors can result in incomplete sets of files.
-func SqliteToAvro(db *sql.DB, path, prefix string, includeJSON bool) ([]string, error) {
+func SqliteToAvro(db *sql.DB, path, prefix string, includeJSON bool, enhancer Enhancer) ([]string, error) {
 	files := []string{}
 
 	tables, err := ListTables(db)
@@ -104,14 +139,14 @@ func SqliteToAvro(db *sql.DB, path, prefix string, includeJSON bool) ([]string, 
 
 	for _, table := range tables {
 		fileName := filepath.Join(savePath, fmt.Sprintf("%s%s.avro", prefix, table))
-		err := TableToOCF(db, table, fileName)
+		err := TableToOCF(db, table, fileName, enhancer)
 		if err != nil {
 			return files, err
 		}
 		files = append(files, fileName)
 		if includeJSON {
 			jsonFileName := filepath.Join(savePath, fmt.Sprintf("%s%s.json", prefix, table))
-			err := TableToJSON(db, table, jsonFileName)
+			err := TableToJSON(db, table, jsonFileName, enhancer)
 			if err != nil {
 				return files, err
 			}
