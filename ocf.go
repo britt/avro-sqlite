@@ -58,10 +58,38 @@ func TableToOCF(db *sql.DB, table, fileName string) error {
 	return nil
 }
 
+// TableToJSON writes the schema of the table to a JSON file.
+func TableToJSON(db *sql.DB, table, fileName string) error {
+	schema, err := ReadSchema(db, table)
+	if err != nil {
+		return err
+	}
+
+	b, err := json.Marshal(schema)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, err = f.Write(b); err != nil {
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // SqliteToAvro writes the data from the sqlite database to a set of OCF files
-// and returns the paths of the files it creates. It is not atomic.
-// Errors can result in incomplete sets of files.
-func SqliteToAvro(db *sql.DB, path, prefix string) ([]string, error) {
+// and returns the paths of the files it creates. It can optionally include a JSON version
+// of the schema in the same directory. The prefix is added to the front of the table name.
+// It is not atomic. Errors can result in incomplete sets of files.
+func SqliteToAvro(db *sql.DB, path, prefix string, includeJSON bool) ([]string, error) {
 	files := []string{}
 
 	tables, err := ListTables(db)
@@ -81,51 +109,14 @@ func SqliteToAvro(db *sql.DB, path, prefix string) ([]string, error) {
 			return files, err
 		}
 		files = append(files, fileName)
-	}
-
-	return files, nil
-}
-
-// SqliteSchemaToJSON writes the schema of the sqlite database to a set of JSON files
-func SqliteSchemaToJSON(db *sql.DB, path, prefix string) ([]string, error) {
-	files := []string{}
-
-	tables, err := ListTables(db)
-	if err != nil {
-		return files, err
-	}
-
-	savePath, err := filepath.Abs(path)
-	if err != nil {
-		return files, err
-	}
-
-	for _, table := range tables {
-		fileName := filepath.Join(savePath, fmt.Sprintf("%s%s.json", prefix, table))
-		schema, err := ReadSchema(db, table)
-		if err != nil {
-			return files, err
+		if includeJSON {
+			jsonFileName := filepath.Join(savePath, fmt.Sprintf("%s%s.json", prefix, table))
+			err := TableToJSON(db, table, jsonFileName)
+			if err != nil {
+				return files, err
+			}
+			files = append(files, jsonFileName)
 		}
-
-		b, err := json.Marshal(schema)
-		if err != nil {
-			return files, err
-		}
-
-		f, err := os.Create(fileName)
-		if err != nil {
-			return files, err
-		}
-		defer f.Close()
-
-		if _, err = f.Write(b); err != nil {
-			return files, err
-		}
-		if err := f.Sync(); err != nil {
-			return files, err
-		}
-
-		files = append(files, fileName)
 	}
 
 	return files, nil
