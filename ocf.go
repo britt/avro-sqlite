@@ -25,8 +25,6 @@ type Enhancer interface {
 	Row(map[string]any) error
 }
 
-// TODO: Add a way to modify table creation SQL
-
 type noopEnhancer struct{}
 
 func (*noopEnhancer) Schema(*SqliteSchema) error { return nil }

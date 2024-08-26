@@ -47,7 +47,6 @@ type SchemaField struct {
 }
 
 // AvroDefault returns the default value for a field in the Avro schema.
-// TODO: make private
 func (s SchemaField) AvroDefault() interface{} {
 	if s.Nullable {
 		return avro.NoDefault
