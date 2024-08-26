@@ -13,20 +13,38 @@ import (
 
 // Enhancer is an interface for augmenting the schema and the data
 // with additional information or computed values.
-// TODO: add a way to modify table creation SQL
 type Enhancer interface {
 	// Schema modifies the schema in place before rows are read.
+	// It receives a pointer to the SqliteSchema and can make modifications to it.
+	// Returns an error if any issues occur during schema enhancement.
 	Schema(*SqliteSchema) error
+
 	// Row modifies each row in place before it is written.
+	// It receives a map representing a single row of data and can modify its contents.
+	// Returns an error if any issues occur during row enhancement.
 	Row(map[string]any) error
 }
+
+// TODO: Add a way to modify table creation SQL
 
 type noopEnhancer struct{}
 
 func (*noopEnhancer) Schema(*SqliteSchema) error { return nil }
 func (*noopEnhancer) Row(map[string]any) error   { return nil }
 
-// TableToOCF writes the data from the table to an OCF file.
+// TableToOCF writes the data from a specified table to an OCF (Object Container File) file.
+//
+// Parameters:
+//   - db: A pointer to the sql.DB representing the SQLite database connection.
+//   - table: The name of the table to export.
+//   - fileName: The path and name of the OCF file to be created.
+//   - enhancer: An Enhancer interface for modifying the schema and data (can be nil).
+//
+// Returns:
+//   - error: An error if any occurred during the process, nil otherwise.
+//
+// This function reads the schema and data from the specified table, applies any enhancements,
+// and writes the result to an OCF file.
 func TableToOCF(db *sql.DB, table, fileName string, enhancer Enhancer) error {
 	if enhancer == nil {
 		enhancer = &noopEnhancer{}
@@ -86,7 +104,19 @@ func TableToOCF(db *sql.DB, table, fileName string, enhancer Enhancer) error {
 	return nil
 }
 
-// TableToJSON writes the schema of the table to a JSON file.
+// TableToJSON writes the schema of a specified table to a JSON file.
+//
+// Parameters:
+//   - db: A pointer to the sql.DB representing the SQLite database connection.
+//   - table: The name of the table whose schema is to be exported.
+//   - fileName: The path and name of the JSON file to be created.
+//   - enhancer: An Enhancer interface for modifying the schema (can be nil).
+//
+// Returns:
+//   - error: An error if any occurred during the process, nil otherwise.
+//
+// This function reads the schema from the specified table, applies any enhancements,
+// and writes the resulting schema to a JSON file.
 func TableToJSON(db *sql.DB, table, fileName string, enhancer Enhancer) error {
 	if enhancer == nil {
 		enhancer = &noopEnhancer{}
@@ -121,10 +151,22 @@ func TableToJSON(db *sql.DB, table, fileName string, enhancer Enhancer) error {
 	return nil
 }
 
-// SqliteToAvro writes the data from the sqlite database to a set of OCF files
-// and returns the paths of the files it creates. It can optionally include a JSON version
-// of the schema in the same directory. The prefix is added to the front of the table name.
-// It is not atomic. Errors can result in incomplete sets of files.
+// SqliteToAvro exports data from a SQLite database to a set of OCF (Object Container File) files.
+//
+// Parameters:
+//   - db: A pointer to the sql.DB representing the SQLite database connection.
+//   - path: The directory path where the OCF files will be saved.
+//   - prefix: A string to be prepended to each table name in the output file names.
+//   - includeJSON: If true, also saves a JSON version of each table's schema.
+//   - enhancer: An Enhancer interface for modifying schemas and data (can be nil).
+//
+// Returns:
+//   - []string: A slice of strings containing the paths of all created files.
+//   - error: An error if any occurred during the process, nil otherwise.
+//
+// This function exports all tables from the SQLite database to individual OCF files.
+// It optionally includes JSON schema files. The function is not atomic, and errors
+// may result in incomplete sets of files.
 func SqliteToAvro(db *sql.DB, path, prefix string, includeJSON bool, enhancer Enhancer) ([]string, error) {
 	files := []string{}
 
