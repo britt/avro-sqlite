@@ -18,8 +18,19 @@ var (
 	booleanSchema = avro.MustParse(`{"type": "boolean"}`)
 )
 
-// LoadAvro loads avro data into a sqlite database.
-// If the table does not exist, it will be created.
+// LoadAvro loads Avro data into a SQLite database.
+//
+// Parameters:
+//   - db: A pointer to the sql.DB representing the SQLite database connection.
+//   - schema: A pointer to the SqliteSchema containing the table structure.
+//   - r: An io.Reader providing the Avro data to be loaded.
+//
+// Returns:
+//   - int64: The number of records successfully inserted into the database.
+//   - error: An error if any occurred during the process, nil otherwise.
+//
+// If the specified table does not exist in the database, it will be created.
+// If the table already exists, it will be truncated before inserting new data.
 func LoadAvro(db *sql.DB, schema *SqliteSchema, r io.Reader) (int64, error) {
 	avroSchema, err := schema.ToAvro()
 	if err != nil {
@@ -118,7 +129,18 @@ func sqliteTypeToAvroSchema(t SqliteType, nullable bool) (avro.Schema, error) {
 	return avroSchema, nil
 }
 
-// ReadAvro reads avro records from an io.Reader into a slice of T
+// ReadAvro reads Avro records from an io.Reader and returns them as a slice of maps.
+//
+// Parameters:
+//   - schema: The Avro schema used to decode the data.
+//   - r: An io.Reader providing the Avro data to be read.
+//
+// Returns:
+//   - []map[string]any: A slice of maps, where each map represents an Avro record.
+//     The keys are field names, and the values are the corresponding field values.
+//   - error: An error if any occurred during the reading process, nil otherwise.
+//
+// This function decodes Avro records until it reaches the end of the input or encounters an error.
 func ReadAvro(schema avro.Schema, r io.Reader) ([]map[string]any, error) {
 	out := []map[string]any{}
 
