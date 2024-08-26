@@ -1,3 +1,5 @@
+// Package avrosqlite provides functionality to interact with SQLite databases
+// and convert their schemas and data to Avro format.
 package avrosqlite
 
 import (
@@ -9,8 +11,10 @@ import (
 	"github.com/hamba/avro"
 )
 
+// SqliteType represents the data type of a SQLite column.
 type SqliteType string
 
+// Constants for SQLite data types and default values.
 const (
 	SqliteNull           SqliteType = "null"
 	SqliteInteger        SqliteType = "integer"
@@ -23,16 +27,20 @@ const (
 	SqliteTextDefault               = ""
 )
 
+// SqliteBlobDefault represents the default value for BLOB type.
 var SqliteBlobDefault = []byte{}
 
+// sqliteSpecialTables is a list of SQLite system tables to be ignored.
 var sqliteSpecialTables = []string{"sqlite_sequence"}
 
+// SqliteSchema represents the schema of a SQLite table.
 type SqliteSchema struct {
 	Table  string        `json:"table"`
 	Fields []SchemaField `json:"fields"`
 	Sql    string        `json:"sql"`
 }
 
+// SchemaField represents a single field in a SQLite table schema.
 type SchemaField struct {
 	Name     string     `json:"name"`
 	Type     SqliteType `json:"type"`
@@ -40,7 +48,7 @@ type SchemaField struct {
 	Default  any        `json:"default,omitempty"`
 }
 
-// AvroDefault returns the default value for a field in the avro schema
+// AvroDefault returns the default value for a field in the Avro schema.
 // TODO: make private
 func (s SchemaField) AvroDefault() interface{} {
 	if s.Nullable {
@@ -76,7 +84,7 @@ func (s SchemaField) AvroDefault() interface{} {
 	return s.Default
 }
 
-// ToAvro returns the avro schema for the sqlite schema
+// ToAvro converts the SQLite schema to an Avro schema.
 func (s *SqliteSchema) ToAvro() (avro.Schema, error) {
 	fields := []*avro.Field{}
 	for _, field := range s.Fields {
@@ -99,7 +107,8 @@ func (s *SqliteSchema) ToAvro() (avro.Schema, error) {
 	return record, nil
 }
 
-// ListTables returns a list of tables in the sqlite database
+// ListTables returns a list of user-defined tables in the SQLite database.
+// It excludes system tables listed in sqliteSpecialTables.
 func ListTables(db *sql.DB) ([]string, error) {
 	tables := []string{}
 	// Read the list of tables from sqlite
@@ -132,6 +141,7 @@ func ListTables(db *sql.DB) ([]string, error) {
 	return tables, nil
 }
 
+// tableExists checks if a table with the given name exists in the SQLite database.
 func tableExists(db *sql.DB, table string) (bool, error) {
 	rows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' AND name=?", table)
 	if err != nil {
@@ -158,7 +168,8 @@ FROM sqlite_master
 WHERE type = 'table' AND name = '%s'
 `
 
-// ReadSchema returns the schema of the sqlite table
+// ReadSchema retrieves the schema of a specified SQLite table.
+// It returns a SqliteSchema struct containing table name, fields, and creation SQL.
 func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 	// Read the schema of the table
 	rows, err := db.Query(
@@ -223,6 +234,8 @@ func ReadSchema(db *sql.DB, tableName string) (*SqliteSchema, error) {
 	return schema, nil
 }
 
+// toDefaultValueType converts a string default value to the appropriate Go type
+// based on the SQLite data type.
 func toDefaultValueType(dataType string, s string) (any, error) {
 	switch SqliteType(dataType) {
 	case SqliteNull:
@@ -245,7 +258,8 @@ func toDefaultValueType(dataType string, s string) (any, error) {
 	return nil, fmt.Errorf("unknown sqlite type: %s", dataType)
 }
 
-// LoadData loads the data from the sqlite database table
+// LoadData retrieves all data from the specified SQLite table.
+// It returns a slice of maps, where each map represents a row in the table.
 func LoadData(db *sql.DB, table string) ([]map[string]any, error) {
 	data := []map[string]any{}
 	// Read the data from each table
