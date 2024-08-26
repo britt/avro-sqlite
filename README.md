@@ -1,3 +1,5 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/britt/avro-sqlite.svg)](https://pkg.go.dev/github.com/britt/avro-sqlite)
+
 # avro-sqlite
 
 `avro-sqlite` is a Go package that provides functionality to interact with SQLite databases and convert their schemas and data to Apache Avro format. It allows you to export SQLite table schemas and data to Avro Object Container Files (OCF) and JSON formats.
