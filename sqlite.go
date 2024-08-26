@@ -1,5 +1,3 @@
-// Package avrosqlite provides functionality to interact with SQLite databases
-// and convert their schemas and data to Avro format.
 package avrosqlite
 
 import (
