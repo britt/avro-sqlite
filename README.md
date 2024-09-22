@@ -1,27 +1,32 @@
-[![Go Reference](https://pkg.go.dev/badge/github.com/britt/avro-sqlite.svg)](https://pkg.go.dev/github.com/britt/avro-sqlite)
-
 # avro-sqlite
 
-`avro-sqlite` is a Go package that provides functionality to interact with SQLite databases and convert their schemas and data to Apache Avro format. It allows you to export SQLite table schemas and data to Avro Object Container Files (OCF) and JSON formats.
+[![Go Reference](https://pkg.go.dev/badge/github.com/britt/avro-sqlite.svg)](https://pkg.go.dev/github.com/britt/avro-sqlite)
+[![Go Report Card](https://goreportcard.com/badge/github.com/britt/avro-sqlite)](https://goreportcard.com/report/github.com/britt/avro-sqlite)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+`avro-sqlite` is a powerful Go package that bridges the gap between SQLite databases and Apache Avro format. It provides a seamless way to convert SQLite schemas and data to Avro, enabling efficient data serialization and interoperability.
 
 ## Features
 
-- List tables in a SQLite database
-- Read SQLite table schemas
-- Convert SQLite schemas to Avro schemas
-- Export SQLite table data to Avro OCF files
-- Export SQLite table schemas to JSON files
-- Load Avro data into SQLite tables
+- **SQLite to Avro Conversion**: Export SQLite table schemas and data to Avro Object Container Files (OCF).
+- **Schema Management**: Convert SQLite schemas to Avro schemas and export them as JSON.
+- **Data Import**: Load Avro data back into SQLite tables.
+- **Flexible Configuration**: Customize export options, including table selection and file naming.
+- **Database Introspection**: List and analyze tables in a SQLite database.
 
 ## Installation
 
+To install `avro-sqlite`, use the `go get` command:
+
 ```bash
-go get github.com/britt/avro-sqlite
+go get -u github.com/britt/avro-sqlite
 ```
 
-## Usage Example
+## Usage
 
-Here's a simple example of how to use the `avro-sqlite` package to export a SQLite database to Avro format:
+Here's a comprehensive guide on how to use the `avro-sqlite` package:
+
+### Exporting SQLite to Avro
 
 ```go
 package main
@@ -52,32 +57,86 @@ func main() {
 }
 ```
 
-This example opens a SQLite database, exports all tables to Avro OCF files, and also generates JSON schema files for each table.
+This example demonstrates how to export all tables from a SQLite database to Avro OCF files, including JSON schema files for each table.
 
-## License
+### Customizing Export Options
 
-MIT License
+You can customize the export process by providing specific options:
 
-Copyright (c) 2024 Britt Crawford
+```go
+options := &avrosqlite.ExportOptions{
+    Tables:        []string{"users", "orders"},  // Export only specific tables
+    IncludeSchema: true,                         // Include schema in OCF files
+    Compression:   "snappy",                     // Use Snappy compression
+}
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+files, err := avrosqlite.SqliteToAvro(db, "output_directory", "prefix_", true, options)
+```
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+### Importing Avro Data to SQLite
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+To import Avro data back into SQLite:
+
+```go
+err := avrosqlite.AvroToSqlite(db, "path/to/avro/file.avro", "table_name")
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+This function reads an Avro OCF file and inserts its data into the specified SQLite table.
+
+## Advanced Usage
+
+### Working with Schemas
+
+You can directly work with schemas:
+
+```go
+// Get Avro schema for a SQLite table
+schema, err := avrosqlite.GetAvroSchemaForTable(db, "table_name")
+
+// Convert SQLite schema to Avro schema
+avroSchema, err := avrosqlite.SqliteSchemaToAvroSchema(sqliteSchema)
+```
+
+### Database Introspection
+
+Analyze your SQLite database:
+
+```go
+// List all tables
+tables, err := avrosqlite.ListTables(db)
+
+// Get schema for a specific table
+schema, err := avrosqlite.GetTableSchema(db, "table_name")
+```
 
 ## Contributing
 
-Contributions are welcome. Please feel free to submit a Pull Request.
+Contributions to `avro-sqlite` are welcome! Here's how you can contribute:
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+Please ensure your code adheres to the project's coding standards and includes appropriate tests.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Thanks to all contributors who have helped shape `avro-sqlite`.
+- Special thanks to the Go community for providing excellent tools and libraries.
+
+## Support
+
+If you encounter any issues or have questions, please file an issue on the [GitHub issue tracker](https://github.com/britt/avro-sqlite/issues).
+
+---
+
+Happy coding with `avro-sqlite`!
