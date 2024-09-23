@@ -24,7 +24,7 @@ go get -u github.com/britt/avro-sqlite
 
 ## Usage
 
-Here's a comprehensive guide on how to use the `avro-sqlite` package:
+Here are some examples of how to use the `avro-sqlite` package:
 
 ### Exporting SQLite to Avro
 
@@ -59,58 +59,69 @@ func main() {
 
 This example demonstrates how to export all tables from a SQLite database to Avro OCF files, including JSON schema files for each table.
 
-### Customizing Export Options
-
-You can customize the export process by providing specific options:
+### Reading Schema and Data
 
 ```go
-options := &avrosqlite.ExportOptions{
-    Tables:        []string{"users", "orders"},  // Export only specific tables
-    IncludeSchema: true,                         // Include schema in OCF files
-    Compression:   "snappy",                     // Use Snappy compression
+// Read schema for a specific table
+schema, err := avrosqlite.ReadSchema(db, "table_name")
+if err != nil {
+    log.Fatal(err)
 }
 
-files, err := avrosqlite.SqliteToAvro(db, "output_directory", "prefix_", true, options)
-```
-
-### Importing Avro Data to SQLite
-
-To import Avro data back into SQLite:
-
-```go
-err := avrosqlite.AvroToSqlite(db, "path/to/avro/file.avro", "table_name")
+// Load data from a table
+data, err := avrosqlite.LoadData(db, "table_name")
 if err != nil {
     log.Fatal(err)
 }
 ```
 
-This function reads an Avro OCF file and inserts its data into the specified SQLite table.
-
-## Advanced Usage
-
-### Working with Schemas
-
-You can directly work with schemas:
+### Converting SQLite Schema to Avro Schema
 
 ```go
-// Get Avro schema for a SQLite table
-schema, err := avrosqlite.GetAvroSchemaForTable(db, "table_name")
+sqliteSchema, err := avrosqlite.ReadSchema(db, "table_name")
+if err != nil {
+    log.Fatal(err)
+}
 
-// Convert SQLite schema to Avro schema
-avroSchema, err := avrosqlite.SqliteSchemaToAvroSchema(sqliteSchema)
+avroSchema, err := sqliteSchema.ToAvro()
+if err != nil {
+    log.Fatal(err)
+}
+
+// Use the Avro schema...
 ```
 
-### Database Introspection
-
-Analyze your SQLite database:
+### Loading Avro Data into SQLite
 
 ```go
-// List all tables
-tables, err := avrosqlite.ListTables(db)
+import (
+    "os"
+    "github.com/hamba/avro"
+)
 
-// Get schema for a specific table
-schema, err := avrosqlite.GetTableSchema(db, "table_name")
+// Open the Avro file
+file, err := os.Open("path/to/avro/file.avro")
+if err != nil {
+    log.Fatal(err)
+}
+defer file.Close()
+
+// Read the SQLite schema (assuming you have it)
+schema, err := avrosqlite.ReadSchema(db, "table_name")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Load the Avro data into SQLite
+count, err := avrosqlite.LoadAvro(db, schema, file)
+if err != nil {
+    log.Fatal(err)
+}
+
+log.Printf("Inserted %d records", count)
 ```
+
+These examples provide a more accurate representation of how to use the `avro-sqlite` package based on the actual implementation in the provided source files.
 
 ## Contributing
 
