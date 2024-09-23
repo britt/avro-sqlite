@@ -1,4 +1,4 @@
-module github.com/britt/avro-sqlite/v1.0.0
+module github.com/britt/avro-sqlite
 
 go 1.21.6
 
