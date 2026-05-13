@@ -9,13 +9,15 @@ import (
 	"github.com/hamba/avro"
 )
 
+// Pre-parsed Avro primitive schemas used for type conversions.
+// These are cached to avoid repeated parsing overhead.
 var (
-	nullSchema    = avro.MustParse(`{"type": "null"}`)
-	longSchema    = avro.MustParse(`{"type": "long"}`)
-	doubleSchema  = avro.MustParse(`{"type": "double"}`)
-	stringSchema  = avro.MustParse(`{"type": "string"}`)
-	bytesSchema   = avro.MustParse(`{"type": "bytes"}`)
-	booleanSchema = avro.MustParse(`{"type": "boolean"}`)
+	nullSchema    = avro.MustParse(`{"type": "null"}`)    // Avro null type schema
+	longSchema    = avro.MustParse(`{"type": "long"}`)    // Avro long (int64) type schema
+	doubleSchema  = avro.MustParse(`{"type": "double"}`)  // Avro double (float64) type schema
+	stringSchema  = avro.MustParse(`{"type": "string"}`)  // Avro string type schema
+	bytesSchema   = avro.MustParse(`{"type": "bytes"}`)   // Avro bytes type schema
+	booleanSchema = avro.MustParse(`{"type": "boolean"}`) // Avro boolean type schema
 )
 
 // LoadAvro loads Avro data into a SQLite database.
@@ -97,12 +99,18 @@ func LoadAvro(db *sql.DB, schema *SqliteSchema, r io.Reader) (int64, error) {
 	return count, nil
 }
 
-// sqliteTypeToAvroSchema converts a sqlite type to an avro primitve schema.
-// Sqlite typoes are convered into the largest avro type that can hold the sqlite type.
+// sqliteTypeToAvroSchema converts a SQLite type to an Avro primitive schema.
+//
+// SQLite types are converted into the largest Avro type that can hold the SQLite type.
 // This means that representations are not as dense as they could be, but it is a simple
 // way to ensure compatibility.
-// https://www.sqlite.org/datatype3.html
-// https://avro.apache.org/docs/1.8.2/spec.html#schema_primitive
+//
+// If nullable is true, the returned schema will be a union type that includes null
+// as the first member.
+//
+// See:
+//   - SQLite type affinity: https://www.sqlite.org/datatype3.html
+//   - Avro primitive types: https://avro.apache.org/docs/1.8.2/spec.html#schema_primitive
 func sqliteTypeToAvroSchema(t SqliteType, nullable bool) (avro.Schema, error) {
 	var avroSchema avro.Schema
 	switch t {
